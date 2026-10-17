@@ -1,0 +1,12 @@
+[
+  {"service": "payment-api",  "level": "ERROR",   "message": "DB connection refused after 3 retries", "response_time": 5200},
+  {"service": "payment-api",  "level": "ERROR",   "message": "OperationalError: too many connections to server", "response_time": 4800},
+  {"service": "auth",         "level": "INFO",    "message": "User login successful uid=12345",       "response_time": 45},
+  {"service": "payment-api",  "level": "CRITICAL","message": "Payment processor timeout – order 9921 failed", "response_time": 9000},
+  {"service": "nginx",        "level": "WARNING", "message": "upstream timed out (110: Connection timed out)"},
+  {"service": "worker",       "level": "ERROR",   "message": "Task queue backlog > 10000 items",       "response_time": 2100},
+  {"service": "api-gateway",  "level": "ERROR",   "message": "Circuit breaker OPEN for payment-api"},
+  {"service": "auth",         "level": "WARNING", "message": "Memory usage at 94% – consider scaling"},
+  {"service": "scheduler",    "level": "INFO",    "message": "Daily report job completed",             "response_time": 330},
+  {"service": "payment-api",  "level": "ERROR",   "message": "Retrying failed transaction id=TXN-8821"}
+]

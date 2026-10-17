@@ -1,0 +1,78 @@
+services:
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: opspilot_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: opspilot
+      POSTGRES_PASSWORD: opspilot
+      POSTGRES_DB: opspilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opspilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── ChromaDB (vector store) ───────────────────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: opspilot_chroma
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  # ── Backend API ───────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opspilot_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://opspilot:opspilot@db:5432/opspilot
+      SYNC_DATABASE_URL: postgresql://opspilot:opspilot@db:5432/opspilot
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    volumes:
+      - ./knowledge_base:/app/knowledge_base:ro
+      - ./sample_data:/app/sample_data:ro
+
+  # ── Streamlit Frontend ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: opspilot_frontend
+    restart: unless-stopped
+    environment:
+      STREAMLIT_BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+
+volumes:
+  pg_data:
+  chroma_data:

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "scenario_01",
+    "query": "Database connection refused: FATAL remaining connection slots are reserved for non-replication superuser connections",
+    "expected_runbook": "db_connection_exhaustion.md",
+    "target_metric": "db_connections",
+    "severity": "critical"
+  },
+  {
+    "id": "scenario_02",
+    "query": "PostgreSQL max connections reached pool timeout 5000ms idle in transaction",
+    "expected_runbook": "db_connection_exhaustion.md",
+    "target_metric": "db_connections",
+    "severity": "high"
+  },
+  {
+    "id": "scenario_03",
+    "query": "HTTP 502 Bad Gateway upstream timed out error rate spiking above 25% on payment-service",
+    "expected_runbook": "high_error_rate.md",
+    "target_metric": "error_rate",
+    "severity": "critical"
+  },
+  {
+    "id": "scenario_04",
+    "query": "500 Internal Server Error spike downstream service degraded upstream connect error",
+    "expected_runbook": "high_error_rate.md",
+    "target_metric": "error_rate",
+    "severity": "high"
+  },
+  {
+    "id": "scenario_05",
+    "query": "Container killed by OOM killer exit code 137 memory usage at 98% resident set size expanding",
+    "expected_runbook": "high_memory_usage.md",
+    "target_metric": "memory_usage",
+    "severity": "critical"
+  },
+  {
+    "id": "scenario_06",
+    "query": "High heap memory utilization GC pause time exceeding 1000ms heap space exhausted",
+    "expected_runbook": "high_memory_usage.md",
+    "target_metric": "memory_usage",
+    "severity": "high"
+  }
+]

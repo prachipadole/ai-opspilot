@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: opspilot
+          POSTGRES_PASSWORD: opspilot
+          POSTGRES_DB: opspilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      chromadb:
+        image: chromadb/chroma:latest
+        ports: ["8001:8000"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://opspilot:opspilot@localhost:5432/opspilot
+          SYNC_DATABASE_URL: postgresql://opspilot:opspilot@localhost:5432/opspilot
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8001
+          OLLAMA_BASE_URL: http://localhost:11434
+          OLLAMA_MODEL: llama3
+        run: pytest tests/ -v --tb=short -k "not TestAPI"
+
+      - name: Start backend for integration tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://opspilot:opspilot@localhost:5432/opspilot
+          SYNC_DATABASE_URL: postgresql://opspilot:opspilot@localhost:5432/opspilot
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8001
+          OLLAMA_BASE_URL: http://localhost:11434
+          OLLAMA_MODEL: llama3
+        run: |
+          uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5   # wait for startup
+
+      - name: Run integration tests
+        run: pytest tests/ -v -k "TestAPI" --tb=short || true
+        # `|| true` so CI doesn't fail if Ollama isn't available in CI
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check . --ignore E501
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t ai-opspilot:ci .
