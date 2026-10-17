@@ -53,7 +53,7 @@ ollama pull llama3
 ### 1. Clone & configure
 
 ```bash
-git clone https://github.com/your-org/ai-opspilot.git
+git clone https://github.com/prachipadole/ai-opspilot.git
 cd ai-opspilot
 cp .env.example .env          # edit as needed
 ```
